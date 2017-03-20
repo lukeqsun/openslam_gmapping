@@ -89,6 +89,28 @@ rostopic pub /startOrStop std_msgs/Int32 "data: 2"
 rostopic pub /startOrStop std_msgs/Int32 "data: 4"
 ```
 
+### GMapping with Fake Odometry Publisher
+- 下载 test_odom 到 $HOME/catkin_ws/src 目录下。代码位置在 https://192.168.1.2/svn/zxdj_project/0088 项目工作/智能控制组/0092 导航
+避障专项/0080 代码开发/0000 slam/test_odom
+- 下载 openslam_gmapping 到 $HOME/catkin_ws/src 目录下。代码位置在 https://192.168.1.2/svn/zxdj_project/0088 项目工作/智能控制组/0092 导航
+避障专项/0080 代码开发/0000 slam/openslam_gmapping
+- 下载 openslam_gmapping 到 $HOME/catkin_ws/src 目录下。代码位置在 https://192.168.1.2/svn/zxdj_project/0088 项目工作/智能控制组/0092 导航
+避障专项/0000  slam开源代码/slam_gmapping
+- 编译这些包
+```shell
+$ cd ~/catkin_ws
+$ catkin_make
+```
+- 运行
+```shell
+$ roslaunch test_odom test.launch
+$ rosrun gmapping slam_gmapping scan:=scan
+```
+- 使用 Rviz 观察建图过程。打开 Rviz 后添加显示 /map topic。
+```shell
+$ rosrun rviz rviz
+```
+
 ### 安装 Gazobo 模拟器（Optional）
 - Install with ROS
 ```shell
@@ -99,11 +121,11 @@ $ sudo apt-get install ros-kinetic-gazebo-ros-pkgs ros-kinetic-gazebo-ros-contro
 ```shell
 $ curl -ssL http://get.gazebosim.org | sh
 ```
-- Install all the models manually
+- Install all the models manually。Gazebo 原本的设定是用到某个模型的时候再去下载到本地，由于其服务器下载速度缓慢，会严重影响开发速度。所以我们要预先把模型都下载好。
 ```shell
 #!/bin/sh
 # Download all model archive files
-wget -l 2 -nc -r "http://models.gazebosim.org/" --accept gz
+wget -l 2 -nc -r -c -t 0 "http://models.gazebosim.org/" --accept gz
 # This is the folder into which wget downloads the model archives
 cd "models.gazebosim.org"
 # Extract all model archives
@@ -140,8 +162,6 @@ $ roslaunch turtlebot_rviz_launchers view_navigation.launch
 ```shell
 $ rosrun map_server map_saver -f <your map name>
 ```
-
-### GMapping 相关设置
 
 ## 参考文献
 1. [TurtleBot - Make a map and navigate with it](http://wiki.ros.org/turtlebot_gazebo/Tutorials/indigo/Make%20a%20map%20and%20navigate%20with%20it)
