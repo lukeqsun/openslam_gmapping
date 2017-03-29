@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>SLAM Algorithm Design</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    
+
+    <style>
+    .markdown-preview-enhanced pre.editor-colors.editor-colors,
+.markdown-preview-enhanced code {
+  background-color: #f7f7f7 !important;
+}
+pre.editor-colors {
+  background-color: #fff;
+  color: #333;
+}
+pre.editor-colors .line.cursor-line {
+  background-color: #f5f5f5;
+}
+pre.editor-colors .invisible {
+  color: #c0c0c0;
+}
+pre.editor-colors .cursor {
+  border-left: 2px solid #000;
+}
+pre.editor-colors .selection .region {
+  background-color: #c8c8fa;
+}
+pre.editor-colors .bracket-matcher .region {
+  border-bottom: 1px solid #000;
+  box-sizing: border-box;
+}
+pre.editor-colors .invisible-character {
+  color: #c0c0c0;
+}
+pre.editor-colors .indent-guide {
+  color: #c0c0c0;
+}
+pre.editor-colors .wrap-guide {
+  background-color: #c0c0c0;
+}
+pre.editor-colors .gutter {
+  background-color: #fff;
+  color: #333;
+}
+pre.editor-colors .gutter .line-number {
+  color: #333;
+  -webkit-font-smoothing: antialiased;
+}
+pre.editor-colors .gutter .line-number.cursor-line {
+  color: #333;
+  background-color: #f5f5f5;
+}
+pre.editor-colors .gutter .line-number.cursor-line-no-selection {
+  background-color: transparent;
+}
+pre.editor-colors .gutter .line-number .icon-right {
+  color: #333;
+}
+pre.editor-colors .gutter:not(.git-diff-icon) .line-number.git-line-removed.git-line-removed::before {
+  bottom: -3px;
+}
+pre.editor-colors .gutter:not(.git-diff-icon) .line-number.git-line-removed::after {
+  content: "";
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  width: 25px;
+  border-bottom: 1px dotted rgba(255, 236, 236, 0.5);
+  pointer-events: none;
+}
+pre.editor-colors .gutter .line-number.folded,
+pre.editor-colors .gutter .line-number:after,
+pre.editor-colors .fold-marker:after {
+  color: #333;
+}
+pre.editor-colors .search-results .mpe-syntax--marker .region {
+  background-color: transparent;
+  border: 1px solid #ed6a43;
+}
+pre.editor-colors .search-results .mpe-syntax--marker.current-result .region {
+  border: 1px solid #fff;
+}
+.mpe-syntax--comment,
+.mpe-syntax--punctuation.mpe-syntax--definition.mpe-syntax--comment,
+.mpe-syntax--string.mpe-syntax--comment {
+  color: #969896;
+}
+.mpe-syntax--constant,
+.mpe-syntax--entity.mpe-syntax--name.mpe-syntax--constant,
+.mpe-syntax--variable.mpe-syntax--other.mpe-syntax--constant,
+.mpe-syntax--variable.mpe-syntax--language {
+  color: #0086b3;
+}
+.mpe-syntax--entity,
+.mpe-syntax--entity.mpe-syntax--name {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #795da3;
+}
+.mpe-syntax--variable.mpe-syntax--parameter.mpe-syntax--function {
+  color: #333;
+}
+.mpe-syntax--entity.mpe-syntax--name.mpe-syntax--tag {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #63a35c;
+}
+.mpe-syntax--keyword {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #a71d5d;
+}
+.mpe-syntax--storage,
+.mpe-syntax--storage.mpe-syntax--type {
+  color: #a71d5d;
+}
+.mpe-syntax--storage.mpe-syntax--modifier.mpe-syntax--package,
+.mpe-syntax--storage.mpe-syntax--modifier.mpe-syntax--import,
+.mpe-syntax--storage.mpe-syntax--type.mpe-syntax--java {
+  color: #333;
+}
+.mpe-syntax--string,
+.mpe-syntax--punctuation.mpe-syntax--definition.mpe-syntax--string,
+.mpe-syntax--string .mpe-syntax--punctuation.mpe-syntax--section.mpe-syntax--embedded .mpe-syntax--source {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #183691;
+}
+.mpe-syntax--support {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #0086b3;
+}
+.mpe-syntax--meta.mpe-syntax--property-name {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #0086b3;
+}
+.mpe-syntax--variable {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #ed6a43;
+}
+.mpe-syntax--variable.mpe-syntax--other {
+  color: #333;
+}
+.mpe-syntax--invalid.mpe-syntax--broken {
+  font-weight: bold;
+  font-style: italic;
+  text-decoration: underline;
+  color: #b52a1d;
+}
+.mpe-syntax--invalid.mpe-syntax--deprecated {
+  font-weight: bold;
+  font-style: italic;
+  text-decoration: underline;
+  color: #b52a1d;
+}
+.mpe-syntax--invalid.mpe-syntax--illegal {
+  font-style: italic;
+  text-decoration: underline;
+  background-color: #b52a1d;
+  color: #f8f8f8;
+}
+.mpe-syntax--carriage-return {
+  font-style: italic;
+  text-decoration: underline;
+  background-color: #b52a1d;
+  color: #f8f8f8;
+  undefined: ^M;
+}
+.mpe-syntax--invalid.mpe-syntax--unimplemented {
+  font-weight: bold;
+  font-style: italic;
+  text-decoration: underline;
+  color: #b52a1d;
+}
+.mpe-syntax--message.mpe-syntax--error {
+  color: #b52a1d;
+}
+.mpe-syntax--string .mpe-syntax--source {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #333;
+}
+.mpe-syntax--string .mpe-syntax--variable {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #0086b3;
+}
+.mpe-syntax--source.mpe-syntax--regexp,
+.mpe-syntax--string.mpe-syntax--regexp {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #183691;
+}
+.mpe-syntax--string.mpe-syntax--regexp.mpe-syntax--character-class,
+.mpe-syntax--string.mpe-syntax--regexp .mpe-syntax--constant.mpe-syntax--character.mpe-syntax--escape,
+.mpe-syntax--string.mpe-syntax--regexp .mpe-syntax--source.mpe-syntax--ruby.mpe-syntax--embedded,
+.mpe-syntax--string.mpe-syntax--regexp .mpe-syntax--string.mpe-syntax--regexp.mpe-syntax--arbitrary-repitition {
+  color: #183691;
+}
+.mpe-syntax--string.mpe-syntax--regexp .mpe-syntax--constant.mpe-syntax--character.mpe-syntax--escape {
+  font-weight: bold;
+  color: #63a35c;
+}
+.mpe-syntax--support.mpe-syntax--constant {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #0086b3;
+}
+.mpe-syntax--support.mpe-syntax--variable {
+  color: #0086b3;
+}
+.mpe-syntax--meta.mpe-syntax--module-reference {
+  color: #0086b3;
+}
+.mpe-syntax--markup.mpe-syntax--list {
+  color: #693a17;
+}
+.mpe-syntax--markup.mpe-syntax--heading,
+.mpe-syntax--markup.mpe-syntax--heading .mpe-syntax--entity.mpe-syntax--name {
+  font-weight: bold;
+  color: #1d3e81;
+}
+.mpe-syntax--markup.mpe-syntax--quote {
+  color: #008080;
+}
+.mpe-syntax--markup.mpe-syntax--italic {
+  font-style: italic;
+  color: #333;
+}
+.mpe-syntax--markup.mpe-syntax--bold {
+  font-weight: bold;
+  color: #333;
+}
+.mpe-syntax--markup.mpe-syntax--raw {
+  font-weight: normal;
+  font-style: normal;
+  text-decoration: none;
+  color: #0086b3;
+}
+.mpe-syntax--markup.mpe-syntax--deleted,
+.mpe-syntax--meta.mpe-syntax--diff.mpe-syntax--header.mpe-syntax--from-file,
+.mpe-syntax--punctuation.mpe-syntax--definition.mpe-syntax--deleted {
+  background-color: #ffecec;
+  color: #bd2c00;
+}
+.mpe-syntax--markup.mpe-syntax--inserted,
+.mpe-syntax--meta.mpe-syntax--diff.mpe-syntax--header.mpe-syntax--to-file,
+.mpe-syntax--punctuation.mpe-syntax--definition.mpe-syntax--inserted {
+  background-color: #eaffea;
+  color: #55a532;
+}
+.mpe-syntax--markup.mpe-syntax--changed,
+.mpe-syntax--punctuation.mpe-syntax--definition.mpe-syntax--changed {
+  background-color: #ffe3b4;
+  color: #ef9700;
+}
+.mpe-syntax--markup.mpe-syntax--ignored,
+.mpe-syntax--markup.mpe-syntax--untracked {
+  color: #d8d8d8;
+  background-color: #808080;
+}
+.mpe-syntax--meta.mpe-syntax--diff.mpe-syntax--range {
+  color: #795da3;
+  font-weight: bold;
+}
+.mpe-syntax--meta.mpe-syntax--diff.mpe-syntax--header {
+  color: #0086b3;
+}
+.mpe-syntax--meta.mpe-syntax--separator {
+  font-weight: bold;
+  color: #1d3e81;
+}
+.mpe-syntax--meta.mpe-syntax--output {
+  color: #1d3e81;
+}
+.mpe-syntax--brackethighlighter.mpe-syntax--tag,
+.mpe-syntax--brackethighlighter.mpe-syntax--curly,
+.mpe-syntax--brackethighlighter.mpe-syntax--round,
+.mpe-syntax--brackethighlighter.mpe-syntax--square,
+.mpe-syntax--brackethighlighter.mpe-syntax--angle,
+.mpe-syntax--brackethighlighter.mpe-syntax--quote {
+  color: #595e62;
+}
+.mpe-syntax--brackethighlighter.mpe-syntax--unmatched {
+  color: #b52a1d;
+}
+.mpe-syntax--sublimelinter.mpe-syntax--mark.mpe-syntax--error {
+  color: #b52a1d;
+}
+.mpe-syntax--sublimelinter.mpe-syntax--mark.mpe-syntax--warning {
+  color: #ed6a43;
+}
+.mpe-syntax--sublimelinter.mpe-syntax--gutter-mark {
+  color: #c0c0c0;
+}
+.mpe-syntax--constant.mpe-syntax--other.mpe-syntax--reference.mpe-syntax--link,
+.mpe-syntax--string.mpe-syntax--other.mpe-syntax--link {
+  color: #183691;
+  text-decoration: underline;
+}
+.markdown-preview-enhanced {
+  font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+  background-color: #fff;
+  overflow: initial;
+  margin: 10px 13px 10px 13px;
+  padding: 2em;
+  box-sizing: border-box;
+  word-wrap: break-word;
+}
+.markdown-preview-enhanced > :first-child {
+  margin-top: 0;
+}
+.markdown-preview-enhanced[is="space-pen-div"] {
+  width: 100%;
+  margin: 0;
+  z-index: 999;
+  overflow: scroll;
+  font-size: 16px;
+  display: block;
+  position: absolute;
+}
+.markdown-preview-enhanced h1,
+.markdown-preview-enhanced h2,
+.markdown-preview-enhanced h3,
+.markdown-preview-enhanced h4,
+.markdown-preview-enhanced h5,
+.markdown-preview-enhanced h6 {
+  line-height: 1.2;
+  margin-top: 1em;
+  margin-bottom: 16px;
+  color: #000000;
+}
+.markdown-preview-enhanced h1 {
+  font-size: 2.25em;
+  font-weight: 300;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid #d6d6d6;
+}
+.markdown-preview-enhanced h2 {
+  font-size: 1.75em;
+  font-weight: 400;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid #d6d6d6;
+}
+.markdown-preview-enhanced h3 {
+  font-size: 1.5em;
+  font-weight: 500;
+}
+.markdown-preview-enhanced h4 {
+  font-size: 1.25em;
+  font-weight: 600;
+}
+.markdown-preview-enhanced h5 {
+  font-size: 1.1em;
+  font-weight: 600;
+}
+.markdown-preview-enhanced h6 {
+  font-size: 1.0em;
+  font-weight: 600;
+}
+.markdown-preview-enhanced h1,
+.markdown-preview-enhanced h2,
+.markdown-preview-enhanced h3,
+.markdown-preview-enhanced h4,
+.markdown-preview-enhanced h5 {
+  font-weight: 600;
+}
+.markdown-preview-enhanced h5 {
+  font-size: 1em;
+}
+.markdown-preview-enhanced h6 {
+  color: #5c5c5c;
+}
+.markdown-preview-enhanced h1,
+.markdown-preview-enhanced h2 {
+  border-bottom: 1px solid #d6d6d6;
+}
+.markdown-preview-enhanced strong {
+  color: #000000;
+}
+.markdown-preview-enhanced del {
+  color: #5c5c5c;
+}
+.markdown-preview-enhanced a:not([href]) {
+  color: inherit;
+  text-decoration: none;
+}
+.markdown-preview-enhanced a {
+  color: #08c;
+  text-decoration: none;
+}
+.markdown-preview-enhanced a:hover {
+  color: #0050a3;
+  text-decoration: none;
+}
+.markdown-preview-enhanced img,
+.markdown-preview-enhanced svg {
+  max-width: 100%;
+}
+.markdown-preview-enhanced > p {
+  margin-top: 0;
+  margin-bottom: 16px;
+  word-wrap: break-word;
+}
+.markdown-preview-enhanced > ul,
+.markdown-preview-enhanced > ol {
+  margin-bottom: 16px;
+}
+.markdown-preview-enhanced ul,
+.markdown-preview-enhanced ol {
+  padding-left: 2em;
+}
+.markdown-preview-enhanced ul.no-list,
+.markdown-preview-enhanced ol.no-list {
+  padding: 0;
+  list-style-type: none;
+}
+.markdown-preview-enhanced ul ul,
+.markdown-preview-enhanced ul ol,
+.markdown-preview-enhanced ol ol,
+.markdown-preview-enhanced ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.markdown-preview-enhanced li {
+  margin-bottom: 0;
+}
+.markdown-preview-enhanced li.task-list-item {
+  list-style: none;
+}
+.markdown-preview-enhanced li > p {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.markdown-preview-enhanced .task-list-item-checkbox {
+  margin: 0 0.2em 0.25em -1.6em;
+  vertical-align: middle;
+}
+.markdown-preview-enhanced .task-list-item-checkbox:hover {
+  cursor: pointer;
+}
+.markdown-preview-enhanced blockquote {
+  margin: 16px 0;
+  font-size: inherit;
+  padding: 0 15px;
+  color: #5c5c5c;
+  border-left: 4px solid #d6d6d6;
+}
+.markdown-preview-enhanced blockquote > :first-child {
+  margin-top: 0;
+}
+.markdown-preview-enhanced blockquote > :last-child {
+  margin-bottom: 0;
+}
+.markdown-preview-enhanced hr {
+  height: 4px;
+  margin: 32px 0;
+  background-color: #d6d6d6;
+  border: 0 none;
+}
+.markdown-preview-enhanced table {
+  margin: 10px 0 15px 0;
+  border-collapse: collapse;
+  border-spacing: 0;
+  display: block;
+  width: 100%;
+  overflow: auto;
+  word-break: normal;
+  word-break: keep-all;
+}
+.markdown-preview-enhanced table th {
+  font-weight: bold;
+  color: #000000;
+}
+.markdown-preview-enhanced table td,
+.markdown-preview-enhanced table th {
+  border: 1px solid #d6d6d6;
+  padding: 6px 13px;
+}
+.markdown-preview-enhanced dl {
+  padding: 0;
+}
+.markdown-preview-enhanced dl dt {
+  padding: 0;
+  margin-top: 16px;
+  font-size: 1em;
+  font-style: italic;
+  font-weight: bold;
+}
+.markdown-preview-enhanced dl dd {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+.markdown-preview-enhanced code {
+  font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-size: 0.85em !important;
+  color: #000000;
+  background-color: #f0f0f0;
+  border-radius: 3px;
+  padding: 0.2em 0;
+}
+.markdown-preview-enhanced code::before,
+.markdown-preview-enhanced code::after {
+  letter-spacing: -0.2em;
+  content: "\00a0";
+}
+.markdown-preview-enhanced pre > code {
+  padding: 0;
+  margin: 0;
+  font-size: 0.85em !important;
+  word-break: normal;
+  white-space: pre;
+  background: transparent;
+  border: 0;
+}
+.markdown-preview-enhanced .highlight {
+  margin-bottom: 16px;
+}
+.markdown-preview-enhanced .highlight pre,
+.markdown-preview-enhanced pre {
+  font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+  padding: 16px;
+  overflow: auto;
+  font-size: 0.85em !important;
+  line-height: 1.45;
+  color: #333;
+  background-color: #f0f0f0 !important;
+  border: #d6d6d6;
+  border-radius: 3px;
+}
+.markdown-preview-enhanced .highlight pre {
+  margin-bottom: 0;
+  word-break: normal;
+}
+.markdown-preview-enhanced pre {
+  word-wrap: break-word;
+  white-space: normal;
+  word-break: break-all;
+}
+.markdown-preview-enhanced pre .section {
+  opacity: 1;
+}
+.markdown-preview-enhanced pre code,
+.markdown-preview-enhanced pre tt {
+  display: inline;
+  max-width: initial;
+  padding: 0;
+  margin: 0;
+  overflow: initial;
+  line-height: inherit;
+  word-wrap: normal;
+  background-color: transparent;
+  border: 0;
+}
+.markdown-preview-enhanced pre code:before,
+.markdown-preview-enhanced pre tt:before,
+.markdown-preview-enhanced pre code:after,
+.markdown-preview-enhanced pre tt:after {
+  content: normal;
+}
+.markdown-preview-enhanced p,
+.markdown-preview-enhanced blockquote,
+.markdown-preview-enhanced ul,
+.markdown-preview-enhanced ol,
+.markdown-preview-enhanced dl,
+.markdown-preview-enhanced pre {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+.markdown-preview-enhanced.markdown-preview-enhanced pre {
+  margin: 16px 0;
+  padding: 1em;
+  font-size: .92em;
+  border-radius: 3px;
+  background-color: #f5f5f5;
+}
+.markdown-preview-enhanced kbd {
+  color: #000000;
+  border: 1px solid #d6d6d6;
+  border-bottom: 2px solid #c7c7c7;
+  padding: 2px 4px;
+  background-color: #f0f0f0;
+  border-radius: 3px;
+}
+.markdown-preview-enhanced .pagebreak,
+.markdown-preview-enhanced .newpage {
+  page-break-before: always;
+}
+@media screen and (min-width: 914px) {
+  .markdown-preview-enhanced {
+    width: 980px;
+    margin: 10px auto;
+    background: #fff;
+  }
+}
+@media screen and (max-width: 400px) {
+  .markdown-preview-enhanced {
+    font-size: 14px;
+    margin: 0 auto;
+    padding: 15px;
+  }
+}
+@media print {
+  .markdown-preview-enhanced {
+    background-color: #fff;
+  }
+  .markdown-preview-enhanced h1,
+  .markdown-preview-enhanced h2,
+  .markdown-preview-enhanced h3,
+  .markdown-preview-enhanced h4,
+  .markdown-preview-enhanced h5,
+  .markdown-preview-enhanced h6 {
+    color: #000000;
+    page-break-after: avoid;
+  }
+  .markdown-preview-enhanced blockquote {
+    color: #5c5c5c;
+  }
+  .markdown-preview-enhanced table,
+  .markdown-preview-enhanced pre {
+    page-break-inside: avoid;
+  }
+  .markdown-preview-enhanced table {
+    display: table;
+  }
+  .markdown-preview-enhanced img {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+  }
+  .markdown-preview-enhanced pre,
+  .markdown-preview-enhanced code {
+    word-wrap: break-word;
+    white-space: normal;
+  }
+}
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk {
+  position: relative;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk .output-div {
+  overflow-x: auto;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk .output-div svg {
+  display: block;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk pre {
+  cursor: text;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk .btn-group {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: none;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk .btn-group .run-btn,
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk .btn-group .run-all-btn {
+  float: right;
+  margin-left: 4px;
+  border-radius: 3px;
+  font-size: 0.8em;
+  color: #eee;
+  background-color: #528bff;
+  background-image: none;
+  border: none;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk .btn-group .run-btn:hover,
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk .btn-group .run-all-btn:hover {
+  background-color: #4b7fe8;
+  cursor: pointer;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk:hover .btn-group {
+  display: block;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk .status {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 0.85em;
+  color: inherit;
+  padding: 2px 6px;
+  background-color: rgba(0, 0, 0, 0.04);
+  display: none;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk.running .btn-group {
+  display: none;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .code-chunk.running .status {
+  display: block;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .back-to-top-btn,
+.markdown-preview-enhanced[is="space-pen-div"] .refresh-btn {
+  position: fixed;
+  display: none;
+  right: 24px;
+  top: 54px;
+}
+.markdown-preview-enhanced[is="space-pen-div"] .back-to-top-btn {
+  right: 72px;
+}
+.markdown-preview-enhanced[is="space-pen-div"]:hover .back-to-top-btn,
+.markdown-preview-enhanced[is="space-pen-div"]:hover .refresh-btn {
+  display: block;
+  opacity: 0.4;
+}
+.markdown-preview-enhanced[is="space-pen-div"]:hover .back-to-top-btn:hover,
+.markdown-preview-enhanced[is="space-pen-div"]:hover .refresh-btn:hover {
+  opacity: 1.0;
+}
+.markdown-preview-enhanced:not([is="space-pen-div"]) .code-chunk .btn-group {
+  display: none;
+}
+.markdown-preview-enhanced:not([is="space-pen-div"]) .code-chunk .status {
+  display: none;
+}
+.markdown-preview-enhanced:not([is="space-pen-div"]) .back-to-top-btn {
+  display: none;
+}
+/*
+ * Reveal.js styles
+ */
+[data-presentation-preview-mode] {
+  background-color: #f4f4f4;
+}
+[data-presentation-preview-mode][data-use-github-style] {
+  background-color: #f4f4f4;
+}
+[data-presentation-preview-mode] .preview-slides {
+  width: 100%;
+}
+[data-presentation-preview-mode] .preview-slides .slide {
+  position: relative;
+  background-color: #fff !important;
+  padding: 2em !important;
+  margin-bottom: 12px;
+  text-align: left !important;
+  display: flex;
+  align-items: center;
+  border: 1px solid #e6e6e6;
+  box-shadow: 0px 0px 16px 4px #eeeeee;
+  font-size: 24px;
+}
+[data-presentation-preview-mode] .preview-slides .slide h1,
+[data-presentation-preview-mode] .preview-slides .slide h2,
+[data-presentation-preview-mode] .preview-slides .slide h3,
+[data-presentation-preview-mode] .preview-slides .slide h4,
+[data-presentation-preview-mode] .preview-slides .slide h5,
+[data-presentation-preview-mode] .preview-slides .slide h6 {
+  margin-top: 0;
+}
+[data-presentation-preview-mode] .preview-slides .slide .background-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+[data-presentation-preview-mode] .preview-slides .slide .background-iframe,
+[data-presentation-preview-mode] .preview-slides .slide .background-iframe-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  border: none;
+  z-index: 1;
+}
+[data-presentation-preview-mode] .preview-slides .slide .background-iframe-overlay {
+  z-index: 2;
+}
+[data-presentation-preview-mode][data-use-github-style] .slide {
+  background-color: #fff !important;
+}
+[data-presentation-preview-mode][data-use-github-style] h1,
+[data-presentation-preview-mode][data-use-github-style] h2,
+[data-presentation-preview-mode][data-use-github-style] h3,
+[data-presentation-preview-mode][data-use-github-style] h4,
+[data-presentation-preview-mode][data-use-github-style] h5,
+[data-presentation-preview-mode][data-use-github-style] h6 {
+  margin-top: 0;
+}
+[data-presentation-preview-mode] section {
+  display: block;
+  width: 100%;
+  transform-style: preserve-3d;
+  font-size: 100%;
+  font: inherit;
+  z-index: 100;
+}
+.markdown-preview-enhanced[data-presentation-mode] {
+  font-size: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+.markdown-preview-enhanced[data-presentation-mode] h1,
+.markdown-preview-enhanced[data-presentation-mode] h2,
+.markdown-preview-enhanced[data-presentation-mode] h3,
+.markdown-preview-enhanced[data-presentation-mode] h4,
+.markdown-preview-enhanced[data-presentation-mode] h5,
+.markdown-preview-enhanced[data-presentation-mode] h6 {
+  margin-top: 0;
+}
+.markdown-preview-enhanced[data-presentation-mode] strong {
+  font-weight: bold;
+}
+.markdown-preview-enhanced[data-presentation-mode]::-webkit-scrollbar {
+  display: none;
+}
+.markdown-preview-enhanced .slides {
+  text-align: left !important;
+}
+
+    </style>
+
+    <script type="text/x-mathjax-config"> MathJax.Hub.Config({ messageStyle: 'none', tex2jax: {inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]], processEnvironments: true, processEscapes: true} }); </script> <script type="text/javascript" async src="file:///home/luke/.atom/packages/markdown-preview-enhanced/dependencies/mathjax/MathJax.js?config=TeX-AMS_CHTML"></script>
+
+    
+  </head>
+  <body class="markdown-preview-enhanced "
+      >
+
+  <h1 id="slam-&#x7B97;&#x6CD5;&#x8BBE;&#x8BA1;&#x7BC7;">SLAM 算法设计篇</h1>
+<h2 id="&#x76EE;&#x7684;">目的</h2>
+<p>在[Jetson TK1 + ROS + GMapping + Hokuyo UST-10LX + Odometry]的基础上，使室内 SLAM 达到以下指标：</p>
+<ul>
+<li><ol style="list-style-type: decimal">
+<li>构建出完整的办公区域室内地图。地图精度达到 3 cm。</li>
+</ol>
+<ul>
+<li>北阳雷达精度为 [ 9 mm - 88 mm]（<span class="math inline">2sin(0.25<em>π</em>/180)</span> × [0.06 - 10] m <span class="math inline">±</span> 40 mm）。</li>
+</ul></li>
+<li><ol start="2" style="list-style-type: decimal">
+<li>要达到 1 中的精度，最大建图半径为 3m 。瞬时建图区域以机器人为中心，为前方 270<span class="math inline"><em></em><sup>∘</sup></span> 的扇形区域。约计 28 <span class="math inline"><em>m</em><sup>2</sup></span> 。</li>
+</ol></li>
+<li><ol start="3" style="list-style-type: decimal">
+<li>所建地图轮廓清楚，总是可以识别场景主要特征，可以闭环。</li>
+</ol></li>
+<li><ol start="4" style="list-style-type: decimal">
+<li>建图具有一定的鲁棒性。建图过程不受里程计的绕动影响。</li>
+</ol>
+<ul>
+<li>绕动包括轮子打滑，机器人被举起等情况。</li>
+</ul></li>
+<li><ol start="5" style="list-style-type: decimal">
+<li>TBD</li>
+</ol></li>
+</ul>
+<h2 id="&#x95EE;&#x9898;&#x5206;&#x6790;">问题分析</h2>
+<p>目前 SLAM 所用的 GMapping 效果图如下：</p>
+<div class="figure">
+<img src="file:////home/luke/Git/openslam_gmapping/images/slam_test_000.png">
+
+</div>
+<ul>
+<li>地图有许多零碎的未知区域，没有建图。
+<ul>
+<li>可能建图时没有扫描到这些区域；</li>
+<li>GMapping 没有及时对这些区域作出正确的判断。</li>
+</ul></li>
+<li>地图边缘不连贯，轮廓误差明显。
+<ul>
+<li>GMapping 参数设置未能符合北阳雷达性能；</li>
+<li>环境对于传感器的干扰。</li>
+</ul></li>
+<li>地图上一些地标性物体不能准确辨认，如桌椅门窗等。
+<ul>
+<li>GMapping 没有对 2D 地图进一步提取特征的能力；</li>
+<li>对于较远处物体，雷达精度未能达到识别要求。</li>
+</ul></li>
+<li>建图过程会发生地图整体偏移。
+<ul>
+<li>GMapping 建议分布对里程计度数依赖较大。</li>
+</ul></li>
+</ul>
+<h2 id="slam-&#x6539;&#x8FDB;&#x5EFA;&#x8BAE;">SLAM 改进建议</h2>
+<h3 id="&#x53C2;&#x6570;&#x8C03;&#x6574;">参数调整</h3>
+<ul>
+<li>针对机器人配置及运行环境，人工调整 GMapping 参数。</li>
+<li>引入动态参数调整机制。
+<ul>
+<li>重构 GMapping 代码，使其可以动态配置主要参数；</li>
+<li>编写建图评估模块，实时评估建图效果；</li>
+<li>引入HMM或遗传算法或者神经网络模块，实时动态调整参数。</li>
+</ul></li>
+</ul>
+<h3 id="&#x5F15;&#x5165;-2d-&#x5730;&#x56FE;&#x7279;&#x5F81;&#x8BC6;&#x522B;">引入 2D 地图特征识别</h3>
+<ul>
+<li>在扫描匹配中加入地图特征识别，构建地标来提高扫描匹配的精度；</li>
+<li>2D 图片识别可以用 OpenCV 中支持的方法；</li>
+<li>可以考虑用卷积神经网络从粒子地图中提取地图特征。</li>
+</ul>
+<h2 id="&#x5B9E;&#x9A8C;">实验</h2>
+<h3 id="&#x4EBA;&#x5DE5;&#x53C2;&#x6570;&#x8C03;&#x6574;-0.5-day">人工参数调整 (0.5 Day)</h3>
+<p>目前 mrobot-indigo/mrobot_nav/launch/gmapping.launch 参数调整如下：</p>
+<div class="sourceCode"><pre class="editor-colors lang-xml"><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>launch</span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>arg</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>scan_topic</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>default</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>scan</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>node</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>pkg</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>gmapping</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>type</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>slam_gmapping</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>slam_gmapping</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>output</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>screen</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>clear_params</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>true</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>odom_frame</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>odom</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>map_update_interval</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>30.0</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;number&nbsp;of&nbsp;particles&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>particles</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>30</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;measurement&nbsp;integration&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>angularUpdate</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.5</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>linearUpdate</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>1</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>temporalUpdate</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>-1.0</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;map&nbsp;resolution&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>delta</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.05</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;scan&nbsp;matcher&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;maximum&nbsp;valid&nbsp;range&nbsp;of&nbsp;the&nbsp;Laser&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>maxRange</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>10.0</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;use&nbsp;up&nbsp;to&nbsp;range&nbsp;of&nbsp;the&nbsp;Laser&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>maxUrange</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>10.0</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;scan&nbsp;matcher&nbsp;cell&nbsp;sigma,&nbsp;for&nbsp;the&nbsp;greedy&nbsp;search&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>sigma</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.075</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>iterations</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>5</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;##&nbsp;default&nbsp;settings&nbsp;for&nbsp;a&nbsp;0.1&nbsp;m&nbsp;map&nbsp;cell&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;linear&nbsp;search&nbsp;step&nbsp;(choose&nbsp;delta)&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>lstep</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.1</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;angular&nbsp;search&nbsp;step,&nbsp;this&nbsp;is&nbsp;fine,&nbsp;depending&nbsp;on&nbsp;the&nbsp;odometry&nbsp;error&nbsp;and&nbsp;the&nbsp;update&nbsp;interval&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>astep</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.05</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;sigma&nbsp;likelihood&nbsp;of&nbsp;1&nbsp;beam&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>lsigma</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.1</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;beams&nbsp;to&nbsp;skip&nbsp;in&nbsp;the&nbsp;likelihood&nbsp;computation&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>lskip</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;the&nbsp;higher&nbsp;the&nbsp;value&nbsp;the&nbsp;slower&nbsp;the&nbsp;filter,&nbsp;the&nbsp;better&nbsp;it&nbsp;can&nbsp;deal&nbsp;with&nbsp;noise,&nbsp;but&nbsp;the&nbsp;less&nbsp;precise&nbsp;and&nbsp;slower&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>kernelSize</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>1</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;gain&nbsp;for&nbsp;smoothing&nbsp;the&nbsp;likelihood&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>ogain</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>3.0</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;when&nbsp;neff&nbsp;&nbsp;is&nbsp;below&nbsp;this&nbsp;value&nbsp;a&nbsp;resampling&nbsp;occurs&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>resampleThreshold</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.5</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;likelihood&nbsp;sampling&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;linear&nbsp;range&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>llsamplerange</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.01</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;linear&nbsp;step&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>llsamplestep</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.01</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;angular&nbsp;range&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>lasamplerange</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.005</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;angular&nbsp;step&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>lasamplestep</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.005</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;motion&nbsp;model&nbsp;parameters&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;translation&nbsp;as&nbsp;a&nbsp;function&nbsp;of&nbsp;translation&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>srr</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.01</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;translation&nbsp;as&nbsp;a&nbsp;function&nbsp;of&nbsp;rotation&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>srt</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.01</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;rotation&nbsp;as&nbsp;a&nbsp;function&nbsp;of&nbsp;translation&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>str</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.01</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span><span>&nbsp;rotation&nbsp;as&nbsp;a&nbsp;function&nbsp;of&nbsp;rotation&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>stt</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>0.01</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>&lt;!--</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inital&nbsp;map&nbsp;params</span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;param&nbsp;name=&quot;xmin&quot;&nbsp;value=&quot;-50.0&quot;/&gt;</span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;param&nbsp;name=&quot;ymin&quot;&nbsp;value=&quot;-50.0&quot;/&gt;</span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;param&nbsp;name=&quot;xmax&quot;&nbsp;value=&quot;50.0&quot;/&gt;</span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;param&nbsp;name=&quot;ymax&quot;&nbsp;value=&quot;50.0&quot;/&gt;</span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;make&nbsp;the&nbsp;starting&nbsp;size&nbsp;small&nbsp;for&nbsp;the&nbsp;benefit&nbsp;of&nbsp;the&nbsp;Android&nbsp;client&#39;s&nbsp;memory...</span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span class="mpe-syntax--comment mpe-syntax--block mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--comment mpe-syntax--xml"><span>--&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>xmin</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>-1.0</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>ymin</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>-1.0</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>xmax</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>1.0</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>param</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>name</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>ymax</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>value</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>1.0</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>remap</span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>from</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>scan</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span>&nbsp;</span><span class="mpe-syntax--entity mpe-syntax--other mpe-syntax--attribute-name mpe-syntax--localname mpe-syntax--xml"><span>to</span></span><span>=</span><span class="mpe-syntax--string mpe-syntax--quoted mpe-syntax--double mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--begin mpe-syntax--xml"><span>&quot;</span></span><span>$(arg&nbsp;scan_topic)</span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--string mpe-syntax--end mpe-syntax--xml"><span>&quot;</span></span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>/&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span>&nbsp;&nbsp;</span><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;/</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>node</span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&gt;</span></span></span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--xml"><span class="mpe-syntax--meta mpe-syntax--tag mpe-syntax--xml"><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&lt;/</span></span><span class="mpe-syntax--entity mpe-syntax--name mpe-syntax--tag mpe-syntax--localname mpe-syntax--xml"><span>launch</span></span><span class="mpe-syntax--punctuation mpe-syntax--definition mpe-syntax--tag mpe-syntax--xml"><span>&gt;</span></span></span></span></div></pre></div>
+<p>建图效果如下：</p>
+<div class="figure">
+<img src="file:////home/luke/Git/openslam_gmapping/images/slam_test_001.png">
+
+</div>
+<p>评估机大致轨迹（手绘）如下：</p>
+<div class="figure">
+<img src="file:////home/luke/Git/openslam_gmapping/images/slam_test_001_path.png">
+
+</div>
+<p>经过参数调整后，整个 SLAM 效果有显著进步。</p>
+<ul>
+<li>本次操作较为谨慎，已基本消灭了之前地图上出现的零碎未知区域。目前存在的位置区域都可以断定是障碍物遮挡所致。</li>
+<li>整体地图轮廓连贯。</li>
+<li>地图上的主要障碍物及地标都能有所发现。</li>
+</ul>
+<h3 id="&#x57FA;&#x4E8E;-opencv-&#x7684;-2d-&#x5730;&#x56FE;&#x7279;&#x5F81;&#x63D0;&#x53D6;-2-day">基于 OpenCV 的 2D 地图特征提取 (2 Day)</h3>
+<h3 id="gmapping-&#x91CD;&#x6784;-3-day">GMapping 重构 (3 Day)</h3>
+<h3 id="&#x5B89;&#x88C5;-tensorflow-1.5-day">安装 TensorFlow (1.5 Day)</h3>
+<h3 id="&#x5B9E;&#x73B0;&#x5B9E;&#x65F6;&#x52A8;&#x6001;&#x53C2;&#x6570;&#x8C03;&#x6574;-5-day">实现实时动态参数调整 (5 Day)</h3>
+<h3 id="&#x5B9E;&#x73B0;-cnn-&#x5730;&#x56FE;&#x7279;&#x5F81;&#x63D0;&#x53D6;&#x5339;&#x914D;-10-day">实现 CNN 地图特征提取匹配 (10 Day)</h3>
+
+
+  </body>
+  
+</html>
