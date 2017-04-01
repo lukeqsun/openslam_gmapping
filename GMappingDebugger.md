@@ -1,4 +1,4 @@
-# GMapping 配置调试篇
+# GMapping 配置调试
 ## 目的
 在 ROS 中使用激光雷达调试 GMapping，深入了解其工作流程及数据处理流程。
 
@@ -221,7 +221,7 @@ $ roslaunch mrobot_nav keyboard_teleop.launch
 ### 建图测试
 - 启动需要的传感器。
 ```shell
-roslaunch mrobot_bringup hokuyo.launch
+$ roslaunch mrobot_bringup hokuyo.launch
 ```
 
 - 启动 gmapping
@@ -277,16 +277,16 @@ $ sudo apt-get install ros-kinetic-desktop-full
 - 检查 PYTHONPATH 是否正常
 ```shell
 $ echo $PYTHONPATH
-/opt/ros/kinetic/lib/python2.7/dist-packages:/usr/lib/python2.7:/usr/lib/python2.7/plat-x86_64-linux-gnu:/usr/lib/python2.7/lib-tk:/usr/lib/python2.7/lib-old:/usr/lib/python2.7/lib-dynload:/usr/local/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages/PILcompat:/usr/lib/python2.7/dist-packages/gtk-2.0
+/opt/ros/kinetic/lib/python2.7/dist-packages:/usr/lib/python2.7/plat-x86_64-linux-gnu:/usr/lib/python2.7/lib-tk:/usr/lib/python2.7/lib-old:/usr/lib/python2.7/lib-dynload:/usr/local/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages/PILcompat:/usr/lib/python2.7/dist-packages/gtk-2.0
 ```
 - 如果 PYTHONPATH 为空或者仅含 /opt/ros/kinetic/lib/python2.7/dist-packages 则需要使用下面的命令找到 PYTHONPATH 中需要包含的路径
 ```shell
 $ python -c 'import sys; print(sys.path)'
 ['', '/opt/ros/kinetic/lib/python2.7/dist-packages', '/usr/lib/python2.7', '/usr/lib/python2.7/plat-x86_64-linux-gnu', '/usr/lib/python2.7/lib-tk', '/usr/lib/python2.7/lib-old', '/usr/lib/python2.7/lib-dynload', '/usr/local/lib/python2.7/dist-packages', '/usr/lib/python2.7/dist-packages', '/usr/lib/python2.7/dist-packages/PILcompat', '/usr/lib/python2.7/dist-packages/gtk-2.0']
 ```
-- 在 ～/.bashrc 中加入 PYTHONPATH
+- 在 ～/.bashrc 中加入 PYTHONPATH。注意不要加入 /usr/lib/python2.7，否则 gdb 会报错。
 ```shell
-export PYTHONPATH="${PYTHONPATH}:/usr/lib/python2.7:/usr/lib/python2.7/plat-x86_64-linux-gnu:/usr/lib/python2.7/lib-tk:/usr/lib/python2.7/lib-old:/usr/lib/python2.7/lib-dynload:/usr/local/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages/PILcompat:/usr/lib/python2.7/dist-packages/gtk-2.0"
+export PYTHONPATH="${PYTHONPATH}:/usr/lib/python2.7/plat-x86_64-linux-gnu:/usr/lib/python2.7/lib-tk:/usr/lib/python2.7/lib-old:/usr/lib/python2.7/lib-dynload:/usr/local/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages:/usr/lib/python2.7/dist-packages/PILcompat:/usr/lib/python2.7/dist-packages/gtk-2.0"
 ```
 - 建议在 ～/.bashrc 中同时加入 ROS setup
 ```shell
@@ -381,27 +381,20 @@ $ rosrun rviz rviz
 ### 安装 Gazobo 模拟器
 - Install with ROS
 ```shell
-$ ros-kinetic-gazebo-ros
-$ sudo apt-get install ros-kinetic-gazebo-ros-pkgs ros-kinetic-gazebo-ros-control
+$ sudo apt-get install ros-kinetic-gazebo-ros ros-kinetic-gazebo-ros-pkgs ros-kinetic-gazebo-ros-control
 ```
 - Or install the latest version (Untested)
 ```shell
 $ curl -ssL http://get.gazebosim.org | sh
 ```
 - Install all the models manually。Gazebo 原本的设定是用到某个模型的时候再去下载到本地，由于其服务器下载速度缓慢，会严重影响开发速度。所以我们要预先把模型都下载好。
+- 下载 https://192.168.1.2/svn/zxdj_project/0088 项目工作/智能控制组/0092 导航
+避障专项/0080 代码开发/0000 slam/gazebo_models 文件夹到本地任意目录后，执行下列命令安装。
 ```shell
-#!/bin/sh
-# Download all model archive files
-wget -l 2 -nc -r -c -t 0 "http://models.gazebosim.org/" --accept gz
-# This is the folder into which wget downloads the model archives
-cd "models.gazebosim.org"
-# Extract all model archives
-for i in *
-do
-  tar -zvxf "$i/model.tar.gz"
-done
-# Copy extracted files to the local model folder
-cp -vfR * "$HOME/.gazebo/models/"
+cd gazebo_models
+chmod +x install
+mkdir -p ~/.gazebo/models
+./install
 ```
 
 ### TurtleBot with Gazebo

@@ -1,4 +1,4 @@
-# SLAM 算法设计篇
+# SLAM 算法设计
 ## 目的
 在[Jetson TK1 + ROS + GMapping + Hokuyo UST-10LX + Odometry]的基础上，使室内 SLAM 达到以下指标：
 
@@ -41,7 +41,7 @@
 - 可以考虑用卷积神经网络从粒子地图中提取地图特征。
 
 ## 实验
-### 人工参数调整 (0.5 Day)
+### 人工参数调整
 目前 mrobot-indigo/mrobot_nav/launch/gmapping.launch 参数调整如下：
 ```xml
 <launch>
@@ -140,7 +140,66 @@
 - 整体地图轮廓连贯。
 - 地图上的主要障碍物及地标都能有所发现。
 
-### 基于 OpenCV 的 2D 地图特征提取 (2 Day)
+### Gazebo 模拟环境搭建
+- 按照 GMapping 配置调试 - Gazebo 模拟器上调试 章节配置初始模拟环境。
+- 下载 https://192.168.1.2/svn/zxdj_project/0088 项目工作/智能控制组/0092 导航
+避障专项/0080 代码开发/0000 slam/test_slam_sim 到本地 ROS 工作目录中。默认为 ~/catkin_ws/src 文件夹下。
+```shell
+cd ~/catkin_ws
+catkin_make
+```
+- 运行 Gazebo 模拟环境
+```shell
+roslaunch test_slam_sim oriental_world.launch
+```
+效果如图所示：
+
+![](images/slam_sim_test_000.png)
+
+- 运行 GMapping 并移动机器人建图
+```shell
+roslaunch test_slam_sim gmapping.launch
+roslaunch turtlebot_teleop keyboard_teleop.launch
+```
+建图效果如图所示：
+
+![](images/slam_sim_test_001.png)
+
+- 该模拟环境默认集成了里程计，Hokuyo 雷达，Kinect 和 IMU。
+
+### 使用 rosbag 录制并重播评估机环境
+- 使用 rosbag 录制 rostopic。在评估机上执行下列命令：
+```shell
+$ roslaunch mrobot_bringup mrobot.launch
+$ roslaunch mrobot_bringup hokuyo.launch
+$ rosbag record -a
+```
+- 使用遥控器移动小车收集传感器信息。完成后 Ctrl-C 关闭 rosbag recording。
+- 将 rosbag 文件：*.bag 复制到开发主机上后，可用下列命令运行 GMapping：
+```shell
+$ roscore
+$ rosbag play --clock 2017-04-01-09-45-44.bag
+$ roslaunch test_slam_sim gmapping.launch
+```
+- 目前已录制好一份办公室Hokuyo激光雷达+mrobot里程计的rosbag。放在 test_slam_sim/bagfiles 目录下。重播该份数据制作的 3cm GMapping 效果如图所示：
+
+![](images/slam_test_002.png)
+
+### 基于 OpenCV 的 2D 地图特征提取
+#### 通过地图在分辨率从低到高状态下的 Maximum Likelihood，层层递进地猜测机器人的 pose
+- 使用 50cm X 50cm / 1 pixel 的地图分辨率做 Maximum Likelihood；
+- 使用 20cm X 20cm / 1 pixel 的地图分辨率做 Maximum Likelihood；
+- 使用 5cm X 5cm / 1 pixel 的地图分辨率做 Maximum Likelihood；
+
+#### 通过地图在不同卷积下的 Maximum Likelihood，猜测机器人的 pose
+- 可用的 CV filter：Mean filter，Correlation filter, Gaussian filter，Gabor filter
+- Thinning: Non-maxima suppression
+- Maximum Likelihood / ICP
+
+#### Using the methods from [OpenCV.feature2D](http://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_table_of_contents_feature2d/py_table_of_contents_feature2d.html)
+- Extract features: SURF or SIFT or Harris Corner Detector or ...
+- Match the features: FLANN ...
+- Find the geometrical transformation: RANSAC or LMeds...
 
 ### GMapping 重构 (3 Day)
 
