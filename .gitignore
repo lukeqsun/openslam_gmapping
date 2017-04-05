@@ -4,3 +4,5 @@ bin/
 lib/
 tags
 CodeReview/
+.gdb_history
+*.gch

@@ -1038,6 +1038,32 @@ pre.editor-colors .search-results .mpe-syntax--marker.current-result .region {
 <li><p>使用 Rviz 观察建图过程。打开 Rviz 后，在 Rviz 中打开 Turtlebot_Navigation/rviz/final.rviz。</p>
 <pre class="editor-colors lang-undefined"><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>$&nbsp;rosrun&nbsp;rviz&nbsp;rviz</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>$&nbsp;roslaunch&nbsp;final_project&nbsp;final_project.launch</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>$&nbsp;rosrun&nbsp;final_project&nbsp;mapping.py</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>$&nbsp;rosrun&nbsp;final_project&nbsp;control.py</span></span></div></pre></li>
 </ul>
+<h3 id="&#x8FDB;&#x9636;-gazebo-&#x8C03;&#x8BD5;&#x73AF;&#x5883;&#x642D;&#x5EFA;">进阶 Gazebo 调试环境搭建</h3>
+<ul>
+<li><p>下载 https://192.168.1.2/svn/zxdj_project/0088 项目工作/智能控制组/0092 导航 避障专项/0080 代码开发/0000 slam/test_slam_sim 到本地 ROS 工作目录中。默认为 ~/catkin_ws/src 文件夹下。</p>
+<pre class="editor-colors lang-undefined"><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>cd&nbsp;~/catkin_ws</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>catkin_make</span></span></div></pre></li>
+<li><p>运行 Gazebo 模拟环境</p>
+<pre class="editor-colors lang-undefined"><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>roslaunch&nbsp;test_slam_sim&nbsp;oriental_world.launch</span></span></div></pre>
+<p>效果如图所示：</p></li>
+</ul>
+<div class="figure">
+<img src="file:////home/luke/Git/openslam_gmapping/images/slam_sim_test_000.png">
+
+</div>
+<ul>
+<li><p>运行 GMapping 并移动机器人建图</p>
+<pre class="editor-colors lang-undefined"><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>roslaunch&nbsp;test_slam_sim&nbsp;gmapping.launch</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>roslaunch&nbsp;turtlebot_teleop&nbsp;keyboard_teleop.launch</span></span></div></pre></li>
+<li><p>该模拟环境默认集成了里程计，Hokuyo 雷达，Kinect 和 IMU。</p></li>
+</ul>
+<h3 id="&#x4F7F;&#x7528;-rosbag-&#x5F55;&#x5236;&#x548C;&#x91CD;&#x64AD;&#x8BC4;&#x4F30;&#x673A;&#x73AF;&#x5883;">使用 rosbag 录制和重播评估机环境</h3>
+<ul>
+<li><p>使用 rosbag 录制 rostopic。在评估机上执行下列命令：</p>
+<pre class="editor-colors lang-undefined"><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>$&nbsp;roslaunch&nbsp;mrobot_bringup&nbsp;mrobot.launch</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>$&nbsp;roslaunch&nbsp;mrobot_bringup&nbsp;hokuyo.launch</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>$&nbsp;rosbag&nbsp;record&nbsp;-a</span></span></div></pre></li>
+<li>使用遥控器移动小车收集传感器信息。完成后 Ctrl-C 关闭 rosbag recording。</li>
+<li><p>将 rosbag 文件：*.bag 复制到开发主机上后，可用下列命令运行 GMapping：</p>
+<pre class="editor-colors lang-undefined"><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>$&nbsp;roscore</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>$&nbsp;rosbag&nbsp;play&nbsp;--clock&nbsp;2017-04-01-09-45-44.bag</span></span></div><div class="line"><span class="mpe-syntax--text mpe-syntax--plain mpe-syntax--null-grammar"><span>$&nbsp;roslaunch&nbsp;test_slam_sim&nbsp;gmapping.launch</span></span></div></pre></li>
+<li><p>目前已录制好一份办公室Hokuyo激光雷达+mrobot里程计的rosbag。放在 test_slam_sim/bagfiles 目录下。</p></li>
+</ul>
 <h2 id="&#x53C2;&#x8003;&#x6587;&#x732E;">参考文献</h2>
 <ol style="list-style-type: decimal">
 <li><a href="http://wiki.ros.org/turtlebot_gazebo/Tutorials/indigo/Make%20a%20map%20and%20navigate%20with%20it">TurtleBot - Make a map and navigate with it</a></li>

@@ -439,5 +439,44 @@ $ rosrun final_project mapping.py
 $ rosrun final_project control.py
 ```
 
+### 进阶 Gazebo 调试环境搭建
+- 下载 https://192.168.1.2/svn/zxdj_project/0088 项目工作/智能控制组/0092 导航
+避障专项/0080 代码开发/0000 slam/test_slam_sim 到本地 ROS 工作目录中。默认为 ~/catkin_ws/src 文件夹下。
+```shell
+cd ~/catkin_ws
+catkin_make
+```
+- 运行 Gazebo 模拟环境
+```shell
+roslaunch test_slam_sim oriental_world.launch
+```
+效果如图所示：
+
+![](images/slam_sim_test_000.png)
+
+- 运行 GMapping 并移动机器人建图
+```shell
+roslaunch test_slam_sim gmapping.launch
+roslaunch turtlebot_teleop keyboard_teleop.launch
+```
+
+- 该模拟环境默认集成了里程计，Hokuyo 雷达，Kinect 和 IMU。
+
+### 使用 rosbag 录制和重播评估机环境
+- 使用 rosbag 录制 rostopic。在评估机上执行下列命令：
+```shell
+$ roslaunch mrobot_bringup mrobot.launch
+$ roslaunch mrobot_bringup hokuyo.launch
+$ rosbag record -a
+```
+- 使用遥控器移动小车收集传感器信息。完成后 Ctrl-C 关闭 rosbag recording。
+- 将 rosbag 文件：*.bag 复制到开发主机上后，可用下列命令运行 GMapping：
+```shell
+$ roscore
+$ rosbag play --clock 2017-04-01-09-45-44.bag
+$ roslaunch test_slam_sim gmapping.launch
+```
+- 目前已录制好一份办公室Hokuyo激光雷达+mrobot里程计的rosbag。放在 test_slam_sim/bagfiles 目录下。
+
 ## 参考文献
 1. [TurtleBot - Make a map and navigate with it](http://wiki.ros.org/turtlebot_gazebo/Tutorials/indigo/Make%20a%20map%20and%20navigate%20with%20it)
