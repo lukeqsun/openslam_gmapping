@@ -36,8 +36,7 @@ inline void GridSlamProcessor::scanMatch(const double* plainReading){
                 m_matcher.computeActiveArea(it->map, it->pose, plainReading);
         }
         if (m_infoStream)
-                m_infoStream << "Hello! This is Luke :)" << std::endl;
-        m_infoStream << "Average Scan Matching Score=" << sumScore/m_particles.size() << std::endl;
+                m_infoStream << "Average Scan Matching Score=" << sumScore/m_particles.size() << std::endl;
 }
 
 inline void GridSlamProcessor::normalize(){

@@ -176,9 +176,347 @@
 - 地图上的主要障碍物及地标都能有所发现。
 
 ### GMapping 重构
+为了之后的修改调整及功能添加，必须对 GMapping 源代码作一番改动。
+
 #### 重构目标
-+ 可在 GMapping 运行时动态改变尽可能多的 GMapping 参数；
-+ 可快速调整 GMapping 算法流程，插入其他算法模块。
+- 可在 GMapping 运行时动态改变尽可能多的 GMapping 参数；
+- 可快速调整 GMapping 算法流程，插入其他算法模块。
+
+#### 重构方案
+##### 与参数有直接关系的数据结构
+- **GridSlamProcessor** instance GDB dump:
+```cpp
+{
+ _vptr.GridSlamProcessor = 0x7ffff7dd4bb8 <vtable for GMapping::GridSlamProcessor+16>,
+ m_matcher = {
+   static nullLikelihood = -0.5,
+   m_activeAreaComputed = false,
+   m_laserBeams = 1081,
+   m_laserAngles = {[0] = -2.3583761334884912, ...},
+   m_laserPose = {
+     <GMapping::point<double>> = {
+       x = 0,
+       y = 0
+     },
+     members of GMapping::orientedpoint<double, double>:
+     theta = 0
+   },
+   **m_laserMaxRange = 10,**
+   **m_usableRange = 10,**
+   **m_gaussianSigma = 0.074999999999999997,**
+   **m_likelihoodSigma = 0.10000000000000001,**
+   **m_kernelSize = 1,**
+   **m_optAngularDelta = 0.050000000000000003,**
+   **m_optLinearDelta = 0.050000000000000003,**
+   **m_optRecursiveIterations = 5,**
+   **m_likelihoodSkip = 0,**
+   **m_llsamplerange = 0.0030000000000000001,**
+   **m_llsamplestep = 0.0030000000000000001,**
+   **m_lasamplerange = 0.0050000000000000001,**
+   **m_lasamplestep = 0.0050000000000000001,**
+   m_generateMap = false,
+   m_enlargeStep = 10,
+   m_fullnessThreshold = 0.10000000000000001,
+   m_angularOdometryReliability = 0,
+   m_linearOdometryReliability = 0,
+   m_freeCellRatio = 1.4142135623730951,
+   m_initialBeamsSkip = 0,
+   m_linePoints = 0x7ffff7fba010
+ },
+ **m_minimumScore = 0,**
+ m_beams = 1081,
+ last_update_time_ = 0,
+ period_ = -1,
+ **m_particles = std::vector of length 30**, capacity 32 = {[0] = {
+     map = {
+       m_center = {
+         x = 0,
+         y = 0
+       },
+       m_worldSizeX = 2,
+       m_worldSizeY = 2,
+       m_delta = 0.029999999999999999,
+       m_storage = {
+         <GMapping::Array2D<GMapping::autoptr<GMapping::Array2D<GMapping::PointAccumulator, false> >, false>> = {
+           m_cells = 0x774ad0,
+           m_xsize = 2,
+           m_ysize = 2
+         },
+         members of GMapping::HierarchicalArray2D<GMapping::PointAccumulator>:
+         _vptr.HierarchicalArray2D = 0x5212c0 <vtable for GMapping::HierarchicalArray2D<GMapping::PointAccumulator>+16>,
+         m_activeArea = std::set with 0 elements,
+         m_patchMagnitude = 5,
+         m_patchSize = 32
+       },
+       m_mapSizeX = 64,
+       m_mapSizeY = 64,
+       m_sizeX2 = 32,
+       m_sizeY2 = 32,
+       static m_unknown = {
+         static unknown_ptr = 0x0,
+         acc = {
+           x = 0,
+           y = 0
+         },
+         n = 0,
+         visits = 0
+       }
+     },
+     pose = {
+       <GMapping::point<double>> = {
+         x = 0,
+         y = 0
+       },
+       members of GMapping::orientedpoint<double, double>:
+       theta = 0
+     },
+     previousPose = {
+       <GMapping::point<double>> = {
+         x = 0,
+         y = 0
+       },
+       members of GMapping::orientedpoint<double, double>:
+       theta = 0
+     },
+     weight = 0,
+     weightSum = 0,
+     gweight = 0,
+     previousIndex = 0,
+     node = 0x77ee60
+   }, ... , [29] = {
+     map = {
+       m_center = {
+         x = 0,
+         y = 0
+       },
+       m_worldSizeX = 2,
+       m_worldSizeY = 2,
+       m_delta = 0.029999999999999999,
+       m_storage = {
+         <GMapping::Array2D<GMapping::autoptr<GMapping::Array2D<GMapping::PointAccumulator, false> >, false>> = {
+           m_cells = 0x77eb50,
+           m_xsize = 2,
+           m_ysize = 2
+         },
+         members of GMapping::HierarchicalArray2D<GMapping::PointAccumulator>:
+         _vptr.HierarchicalArray2D = 0x5212c0 <vtable for GMapping::HierarchicalArray2D<GMapping::PointAccumulator>+16>,
+         m_activeArea = std::set with 0 elements,
+         m_patchMagnitude = 5,
+         m_patchSize = 32
+       },
+       m_mapSizeX = 64,
+       m_mapSizeY = 64,
+       m_sizeX2 = 32,
+       m_sizeY2 = 32,
+       static m_unknown = {
+         static unknown_ptr = 0x0,
+         acc = {
+           x = 0,
+           y = 0
+         },
+         n = 0,
+         visits = 0
+       }
+     },
+     pose = {
+       <GMapping::point<double>> = {
+         x = 0,
+         y = 0
+       },
+       members of GMapping::orientedpoint<double, double>:
+       theta = 0
+     },
+     previousPose = {
+       <GMapping::point<double>> = {
+         x = 0,
+         y = 0
+       },
+       members of GMapping::orientedpoint<double, double>:
+       theta = 0
+     },
+     weight = 0,
+     weightSum = 0,
+     gweight = 0,
+     previousIndex = 0,
+     node = 0x77ee60
+   }},
+ m_indexes = std::vector of length 0, capacity 0,
+ m_weights = std::vector of length 0, capacity 0,
+ m_motionModel = {
+   **srr = 0.01,**
+   **str = 0.01,**
+   **srt = 0.01,**
+   **stt = 0.01**
+ },
+ **m_resampleThreshold = 0.5,**
+ m_count = 0,
+ m_readingCount = 0,
+ m_lastPartPose = {
+   <GMapping::point<double>> = {
+     x = 0,
+     y = 0
+   },
+   members of GMapping::orientedpoint<double, double>:
+   theta = 0
+ },
+ m_odoPose = {
+   <GMapping::point<double>> = {
+     x = 0,
+     y = 0
+   },
+   members of GMapping::orientedpoint<double, double>:
+   theta = 0
+ },
+ m_pose = {
+   <GMapping::point<double>> = {
+     x = 0,
+     y = 0
+   },
+   members of GMapping::orientedpoint<double, double>:
+   theta = 0
+ },
+ m_linearDistance = 0,
+ m_angularDistance = 0,
+ m_neff = 30,
+ **m_xmin = -1,**
+ **m_ymin = -1,**
+ **m_xmax = 1,**
+ **m_ymax = 1,**
+ **m_delta = 0.029999999999999999,**
+ m_regScore = 0,
+ m_critScore = 0,
+ m_maxMove = 0,
+ **m_linearThresholdDistance = 1,**
+ **m_angularThresholdDistance = 0.5,**
+ **m_obsSigmaGain = 3,**
+ m_outputStream = <incomplete type>,
+ m_infoStream = @0x7ffff5a8df40
+}
+```
+
+- **ScanMatcher** instance GDB dump:
+```cpp
+{
+ static nullLikelihood = -0.5,
+ m_activeAreaComputed = true,
+ m_laserBeams = 1081,
+ m_laserAngles = {[0] = -2.3583761334884912, ...},
+ m_laserPose = {
+   <GMapping::point<double>> = {
+     x = 0,
+     y = 0
+   },
+   members of GMapping::orientedpoint<double, double>:
+   theta = 0
+ },
+ m_laserMaxRange = 10,
+ m_usableRange = 10,
+ m_gaussianSigma = 0.074999999999999997,
+ m_likelihoodSigma = 0.10000000000000001,
+ m_kernelSize = 1,
+ m_optAngularDelta = 0.050000000000000003,
+ m_optLinearDelta = 0.050000000000000003,
+ m_optRecursiveIterations = 5,
+ m_likelihoodSkip = 0,
+ m_llsamplerange = 0.0030000000000000001,
+ m_llsamplestep = 0.0030000000000000001,
+ m_lasamplerange = 0.0050000000000000001,
+ m_lasamplestep = 0.0050000000000000001,
+ m_generateMap = false,
+ m_enlargeStep = 10,
+ m_fullnessThreshold = 0.10000000000000001,
+ m_angularOdometryReliability = 0,
+ m_linearOdometryReliability = 0,
+ m_freeCellRatio = 1.4142135623730951,
+ m_initialBeamsSkip = 0,
+ m_linePoints = 0x7ffff7fba010
+}
+```
+
+- **Particle** instance GDB dump:
+```cpp
+{
+ map = {
+   m_center = {
+     x = 0,
+     y = 0
+   },
+   m_worldSizeX = 29.1754153809058,
+   m_worldSizeY = 26.449551661589346,
+   m_delta = 0.029999999999999999,
+   m_storage = {
+     <GMapping::Array2D<GMapping::autoptr<GMapping::Array2D<GMapping::PointAccumulator, false> >, false>> = {
+       m_cells = 0x774700,
+       m_xsize = 31,
+       m_ysize = 28
+     },
+     members of GMapping::HierarchicalArray2D<GMapping::PointAccumulator>:
+     _vptr.HierarchicalArray2D = 0x5212c0 <vtable for GMapping::HierarchicalArray2D<GMapping::PointAccumulator>+16>,
+     m_activeArea = std::set with 34 elements = {
+       [0] = {
+         x = 10,
+         y = 15
+       }, ...
+       [33] = {
+         x = 20,
+         y = 12
+       }
+     },
+     m_patchMagnitude = 5,
+     m_patchSize = 32
+   },
+   m_mapSizeX = 992,
+   m_mapSizeY = 896,
+   m_sizeX2 = 416,
+   m_sizeY2 = 384,
+   static m_unknown = {
+     static unknown_ptr = 0x0,
+     acc = {
+       x = 0,
+       y = 0
+     },
+     n = 0,
+     visits = 0
+   }
+ },
+ pose = {
+   <GMapping::point<double>> = {
+     x = 1.0448611780798875,
+     y = 0.0015719739925550741
+   },
+   members of GMapping::orientedpoint<double, double>:
+   theta = -0.011126235634017207
+ },
+ previousPose = {
+   <GMapping::point<double>> = {
+     x = 0,
+     y = 0
+   },
+   members of GMapping::orientedpoint<double, double>:
+   theta = 0
+ },
+ weight = 0,
+ weightSum = 0,
+ gweight = 0,
+ previousIndex = 0,
+ node = 0x835fa0
+}
+```
+
+- **MotionModel** instance GDB dump:
+```cpp
+{
+  **srr = 0.01,**
+  **str = 0.01,**
+  **srt = 0.01,**
+  **stt = 0.01**
+}
+```
+
+##### 功能模块
+GridSlamProcessor::scanMatch(
+
+#### OcscGMapping
 
 ### 基于 OpenCV 的 2D 地图特征提取
 #### 通过地图在分辨率从低到高状态下的 Maximum Likelihood，层层递进地猜测机器人的 pose
