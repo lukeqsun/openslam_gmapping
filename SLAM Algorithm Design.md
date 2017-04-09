@@ -175,348 +175,96 @@
 - 整体地图轮廓连贯。
 - 地图上的主要障碍物及地标都能有所发现。
 
-### GMapping 重构
+### GMapping 重构（第一版）
 为了之后的修改调整及功能添加，必须对 GMapping 源代码作一番改动。
 
 #### 重构目标
 - 可在 GMapping 运行时动态改变尽可能多的 GMapping 参数；
 - 可快速调整 GMapping 算法流程，插入其他算法模块。
 
-#### 重构方案
-##### 与参数有直接关系的数据结构
-- **GridSlamProcessor** instance GDB dump:
-```cpp
-{
- _vptr.GridSlamProcessor = 0x7ffff7dd4bb8 <vtable for GMapping::GridSlamProcessor+16>,
- m_matcher = {
-   static nullLikelihood = -0.5,
-   m_activeAreaComputed = false,
-   m_laserBeams = 1081,
-   m_laserAngles = {[0] = -2.3583761334884912, ...},
-   m_laserPose = {
-     <GMapping::point<double>> = {
-       x = 0,
-       y = 0
-     },
-     members of GMapping::orientedpoint<double, double>:
-     theta = 0
-   },
-   **m_laserMaxRange = 10,**
-   **m_usableRange = 10,**
-   **m_gaussianSigma = 0.074999999999999997,**
-   **m_likelihoodSigma = 0.10000000000000001,**
-   **m_kernelSize = 1,**
-   **m_optAngularDelta = 0.050000000000000003,**
-   **m_optLinearDelta = 0.050000000000000003,**
-   **m_optRecursiveIterations = 5,**
-   **m_likelihoodSkip = 0,**
-   **m_llsamplerange = 0.0030000000000000001,**
-   **m_llsamplestep = 0.0030000000000000001,**
-   **m_lasamplerange = 0.0050000000000000001,**
-   **m_lasamplestep = 0.0050000000000000001,**
-   m_generateMap = false,
-   m_enlargeStep = 10,
-   m_fullnessThreshold = 0.10000000000000001,
-   m_angularOdometryReliability = 0,
-   m_linearOdometryReliability = 0,
-   m_freeCellRatio = 1.4142135623730951,
-   m_initialBeamsSkip = 0,
-   m_linePoints = 0x7ffff7fba010
- },
- **m_minimumScore = 0,**
- m_beams = 1081,
- last_update_time_ = 0,
- period_ = -1,
- **m_particles = std::vector of length 30**, capacity 32 = {[0] = {
-     map = {
-       m_center = {
-         x = 0,
-         y = 0
-       },
-       m_worldSizeX = 2,
-       m_worldSizeY = 2,
-       m_delta = 0.029999999999999999,
-       m_storage = {
-         <GMapping::Array2D<GMapping::autoptr<GMapping::Array2D<GMapping::PointAccumulator, false> >, false>> = {
-           m_cells = 0x774ad0,
-           m_xsize = 2,
-           m_ysize = 2
-         },
-         members of GMapping::HierarchicalArray2D<GMapping::PointAccumulator>:
-         _vptr.HierarchicalArray2D = 0x5212c0 <vtable for GMapping::HierarchicalArray2D<GMapping::PointAccumulator>+16>,
-         m_activeArea = std::set with 0 elements,
-         m_patchMagnitude = 5,
-         m_patchSize = 32
-       },
-       m_mapSizeX = 64,
-       m_mapSizeY = 64,
-       m_sizeX2 = 32,
-       m_sizeY2 = 32,
-       static m_unknown = {
-         static unknown_ptr = 0x0,
-         acc = {
-           x = 0,
-           y = 0
-         },
-         n = 0,
-         visits = 0
-       }
-     },
-     pose = {
-       <GMapping::point<double>> = {
-         x = 0,
-         y = 0
-       },
-       members of GMapping::orientedpoint<double, double>:
-       theta = 0
-     },
-     previousPose = {
-       <GMapping::point<double>> = {
-         x = 0,
-         y = 0
-       },
-       members of GMapping::orientedpoint<double, double>:
-       theta = 0
-     },
-     weight = 0,
-     weightSum = 0,
-     gweight = 0,
-     previousIndex = 0,
-     node = 0x77ee60
-   }, ... , [29] = {
-     map = {
-       m_center = {
-         x = 0,
-         y = 0
-       },
-       m_worldSizeX = 2,
-       m_worldSizeY = 2,
-       m_delta = 0.029999999999999999,
-       m_storage = {
-         <GMapping::Array2D<GMapping::autoptr<GMapping::Array2D<GMapping::PointAccumulator, false> >, false>> = {
-           m_cells = 0x77eb50,
-           m_xsize = 2,
-           m_ysize = 2
-         },
-         members of GMapping::HierarchicalArray2D<GMapping::PointAccumulator>:
-         _vptr.HierarchicalArray2D = 0x5212c0 <vtable for GMapping::HierarchicalArray2D<GMapping::PointAccumulator>+16>,
-         m_activeArea = std::set with 0 elements,
-         m_patchMagnitude = 5,
-         m_patchSize = 32
-       },
-       m_mapSizeX = 64,
-       m_mapSizeY = 64,
-       m_sizeX2 = 32,
-       m_sizeY2 = 32,
-       static m_unknown = {
-         static unknown_ptr = 0x0,
-         acc = {
-           x = 0,
-           y = 0
-         },
-         n = 0,
-         visits = 0
-       }
-     },
-     pose = {
-       <GMapping::point<double>> = {
-         x = 0,
-         y = 0
-       },
-       members of GMapping::orientedpoint<double, double>:
-       theta = 0
-     },
-     previousPose = {
-       <GMapping::point<double>> = {
-         x = 0,
-         y = 0
-       },
-       members of GMapping::orientedpoint<double, double>:
-       theta = 0
-     },
-     weight = 0,
-     weightSum = 0,
-     gweight = 0,
-     previousIndex = 0,
-     node = 0x77ee60
-   }},
- m_indexes = std::vector of length 0, capacity 0,
- m_weights = std::vector of length 0, capacity 0,
- m_motionModel = {
-   **srr = 0.01,**
-   **str = 0.01,**
-   **srt = 0.01,**
-   **stt = 0.01**
- },
- **m_resampleThreshold = 0.5,**
- m_count = 0,
- m_readingCount = 0,
- m_lastPartPose = {
-   <GMapping::point<double>> = {
-     x = 0,
-     y = 0
-   },
-   members of GMapping::orientedpoint<double, double>:
-   theta = 0
- },
- m_odoPose = {
-   <GMapping::point<double>> = {
-     x = 0,
-     y = 0
-   },
-   members of GMapping::orientedpoint<double, double>:
-   theta = 0
- },
- m_pose = {
-   <GMapping::point<double>> = {
-     x = 0,
-     y = 0
-   },
-   members of GMapping::orientedpoint<double, double>:
-   theta = 0
- },
- m_linearDistance = 0,
- m_angularDistance = 0,
- m_neff = 30,
- **m_xmin = -1,**
- **m_ymin = -1,**
- **m_xmax = 1,**
- **m_ymax = 1,**
- **m_delta = 0.029999999999999999,**
- m_regScore = 0,
- m_critScore = 0,
- m_maxMove = 0,
- **m_linearThresholdDistance = 1,**
- **m_angularThresholdDistance = 0.5,**
- **m_obsSigmaGain = 3,**
- m_outputStream = <incomplete type>,
- m_infoStream = @0x7ffff5a8df40
-}
-```
-
-- **ScanMatcher** instance GDB dump:
-```cpp
-{
- static nullLikelihood = -0.5,
- m_activeAreaComputed = true,
- m_laserBeams = 1081,
- m_laserAngles = {[0] = -2.3583761334884912, ...},
- m_laserPose = {
-   <GMapping::point<double>> = {
-     x = 0,
-     y = 0
-   },
-   members of GMapping::orientedpoint<double, double>:
-   theta = 0
- },
- m_laserMaxRange = 10,
- m_usableRange = 10,
- m_gaussianSigma = 0.074999999999999997,
- m_likelihoodSigma = 0.10000000000000001,
- m_kernelSize = 1,
- m_optAngularDelta = 0.050000000000000003,
- m_optLinearDelta = 0.050000000000000003,
- m_optRecursiveIterations = 5,
- m_likelihoodSkip = 0,
- m_llsamplerange = 0.0030000000000000001,
- m_llsamplestep = 0.0030000000000000001,
- m_lasamplerange = 0.0050000000000000001,
- m_lasamplestep = 0.0050000000000000001,
- m_generateMap = false,
- m_enlargeStep = 10,
- m_fullnessThreshold = 0.10000000000000001,
- m_angularOdometryReliability = 0,
- m_linearOdometryReliability = 0,
- m_freeCellRatio = 1.4142135623730951,
- m_initialBeamsSkip = 0,
- m_linePoints = 0x7ffff7fba010
-}
-```
-
-- **Particle** instance GDB dump:
-```cpp
-{
- map = {
-   m_center = {
-     x = 0,
-     y = 0
-   },
-   m_worldSizeX = 29.1754153809058,
-   m_worldSizeY = 26.449551661589346,
-   m_delta = 0.029999999999999999,
-   m_storage = {
-     <GMapping::Array2D<GMapping::autoptr<GMapping::Array2D<GMapping::PointAccumulator, false> >, false>> = {
-       m_cells = 0x774700,
-       m_xsize = 31,
-       m_ysize = 28
-     },
-     members of GMapping::HierarchicalArray2D<GMapping::PointAccumulator>:
-     _vptr.HierarchicalArray2D = 0x5212c0 <vtable for GMapping::HierarchicalArray2D<GMapping::PointAccumulator>+16>,
-     m_activeArea = std::set with 34 elements = {
-       [0] = {
-         x = 10,
-         y = 15
-       }, ...
-       [33] = {
-         x = 20,
-         y = 12
-       }
-     },
-     m_patchMagnitude = 5,
-     m_patchSize = 32
-   },
-   m_mapSizeX = 992,
-   m_mapSizeY = 896,
-   m_sizeX2 = 416,
-   m_sizeY2 = 384,
-   static m_unknown = {
-     static unknown_ptr = 0x0,
-     acc = {
-       x = 0,
-       y = 0
-     },
-     n = 0,
-     visits = 0
-   }
- },
- pose = {
-   <GMapping::point<double>> = {
-     x = 1.0448611780798875,
-     y = 0.0015719739925550741
-   },
-   members of GMapping::orientedpoint<double, double>:
-   theta = -0.011126235634017207
- },
- previousPose = {
-   <GMapping::point<double>> = {
-     x = 0,
-     y = 0
-   },
-   members of GMapping::orientedpoint<double, double>:
-   theta = 0
- },
- weight = 0,
- weightSum = 0,
- gweight = 0,
- previousIndex = 0,
- node = 0x835fa0
-}
-```
-
-- **MotionModel** instance GDB dump:
-```cpp
-{
-  **srr = 0.01,**
-  **str = 0.01,**
-  **srt = 0.01,**
-  **stt = 0.01**
-}
-```
+#### GMapping 现状
+##### 数据结构
+主要数据结构详见 **GMapping 专项分析 #重要数据结构**
 
 ##### 功能模块
-GridSlamProcessor::scanMatch(
+主要功能模块详见 **GMapping 专项分析 #重点代码片段详解**
 
-#### OcscGMapping
+#### 重构方案
+基于上述 GMapping 现状及重构需求，现制定改动如下所述。
+
+##### 编程语言
+- C++
+
+##### 新增及改动的数据结构
+- OpenSLAM GMapping
+    - ParamProvider
+        - ParamGroup
+        - Param\<T\>, String ID
+    - GridSlamProcessor
+        - m_paramProvider
+        - void setParamProvider(ParamProvider);
+    - ScanMatcher
+        - m_paramProvider
+
+- **ParamProvider Class**: 管理动态参数组。
+    + ParamGroup.updateGroup();
+    + Param\<T\>:
+        + \<T\> getParam(String name);
+    + 目前设下列参数：
+        + LaserGroup（动态调整，需组同步更新）
+            + m_laserMaxRange = 10,
+            + m_usableRange = 10,
+        + ScanMatchGroup（动态调整，需更新）
+            + m_gaussianSigma = 0.074999999999999997,
+            + m_kernelSize = 1,
+            + m_optAngularDelta = 0.050000000000000003,
+            + m_optLinearDelta = 0.050000000000000003,
+            + m_optRecursiveIterations = 5,
+            + m_likelihoodSigma = 0.10000000000000001,
+            + m_obsSigmaGain = 3,
+            + m_likelihoodSkip = 0,
+            + m_minimumScore = 0,
+        + LikelihoodGroup（动态调整，需组同步更新）
+            + m_llsamplerange = 0.0030000000000000001,
+            + m_llsamplestep = 0.0030000000000000001,
+            + m_lasamplerange = 0.0050000000000000001,
+            + m_lasamplestep = 0.0050000000000000001,
+        + MotionModelGroup（动态调整，需组同步更新）
+            + srr = 0.01,
+            + str = 0.01,
+            + srt = 0.01,
+            + stt = 0.01
+        + OtherGroup（动态调整，需更新）
+            + m_linearThresholdDistance = 1,
+            + m_angularThresholdDistance = 0.5,
+            + （指粒子个数）m_particles = std::vector of length 30
+            + m_resampleThreshold = 0.5,
+        + ResolutionGroup (动态调整，需更新)
+            + m_resolutionLevel = int，创建不同分辨率的层数
+            + m_resolutions = {int, int, ...}，每层地图的分辨率
+
+##### 新增及改动的功能模块
+- SLAM GMapping 初始化
+    - new ParamProvider
+    - GridSlamProcessor.setParamProvider
+
+- GridSlamProcessor::scanMatch
+    - 地图预处理函数
+        - ScanMatcherMap resolutionPatch = ScanMatcher.applyMapResolution(ScanMatcherMap, Resolution)
+        - ScanMatcherMap filterPatch = ScanMatcher.applyMapFilter(ScanMatcherMap, Filter)
+        - ScanMatcherMap thinningPatch = ScanMatcher.applyThinningFilter(ScanMatcherMap, ThinningParam)
+    - ScanMatcher.optimize
+        - icp
+        - {Front, Back, Left, Right, TurnLeft, TurnRight}.score
+        - CovarianceMatrix + {Front, Back, Left, Right, TurnLeft, TurnRight}.score + likelihoodAndScore
+        - **resolutionPatch + {Front, Back, Left, Right, TurnLeft, TurnRight}.score**
+        - **resolutionPatch + icp**
+        - (Optional) resolutionPatch + filterPatch + icp
+        - (Optional) filterPatch + Thinning + likelihoodAndScore/icp
+
+##### (Optional) Python化
+- 程序主体使用 Python，快速开发，避免繁琐的 ROS CMake 设置，不需要编译；
+- GMapping 部分仍使用 C++，在 OpenSLAM GMapping 代码的基础上添加 Python wrapper，使其成为一个 Python module。
 
 ### 基于 OpenCV 的 2D 地图特征提取
 #### 通过地图在分辨率从低到高状态下的 Maximum Likelihood，层层递进地猜测机器人的 pose
@@ -524,18 +272,18 @@ GridSlamProcessor::scanMatch(
 - 使用 20cm X 20cm / 1 pixel 的地图分辨率做 Maximum Likelihood；
 - 使用 5cm X 5cm / 1 pixel 的地图分辨率做 Maximum Likelihood；
 
-#### 通过地图在不同卷积下的 Maximum Likelihood，猜测机器人的 pose
+#### (Optional) 通过地图在不同卷积下的 Maximum Likelihood，猜测机器人的 pose
 - 可用的 CV filter：Mean filter，Correlation filter, Gaussian filter，Gabor filter
 - Thinning: Non-maxima suppression
 - Maximum Likelihood / ICP
 
-#### Using the methods from [OpenCV.feature2D](http://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_table_of_contents_feature2d/py_table_of_contents_feature2d.html)
+#### (Optional) Using the methods from [OpenCV.feature2D](http://docs.opencv.org/3.0-beta/doc/py_tutorials/py_feature2d/py_table_of_contents_feature2d/py_table_of_contents_feature2d.html)
 - Extract features: SURF or SIFT or Harris Corner Detector or ...
 - Match the features: FLANN ...
 - Find the geometrical transformation: RANSAC or LMeds...
 
-### 安装 TensorFlow (1.5 Day)
+### (Optional) 安装 TensorFlow
 
-### 实现实时动态参数调整 (5 Day)
+### (Optional) 实现实时动态参数调整
 
-### 实现 CNN 地图特征提取匹配 (10 Day)
+### (Optional) 实现 CNN 地图特征提取匹配
